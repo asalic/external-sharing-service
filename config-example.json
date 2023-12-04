@@ -1,0 +1,36 @@
+{
+    "path": "/",
+    "port": 80,
+    "sharing": {
+        "email" : {
+            "enabled": false,
+            "uploadFieldName": "file",
+            "trustProxy": false,
+            "subject": "",
+            "fromName": "",
+            "text": "This is the content sent in the body of the email",
+            "fromAddress": "",
+            "smtpServer": "smtp.your-server",
+            "smtpPort": 465,
+            "allowedFileTypes": "csv|txt",
+            "maxFileSize": 0,
+            "storePath": "/tmp/multer"
+        }
+    },
+    "db": {
+        "client": "potgresql",
+        "connection": {
+            "host": "localhost",
+            "port": 5432,
+            "user": "postgres",
+            "password": "postgres",
+            "database": "postgres"
+        }
+    },
+    "oidc": {
+        "url": "",
+        "realm": "",
+        "clientId": "",
+        "clientSecret": ""
+    }
+}
