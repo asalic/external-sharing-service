@@ -1,3 +1,4 @@
+import type KeycloakApiToken from "./KeycloakApiToken";
 
 export default interface UserRepresentation {
 
@@ -7,6 +8,6 @@ export default interface UserRepresentation {
     firstName?: string | null;
     lastName?: string | null;
     email: string;
-    apiToken: string;
+    apiToken: KeycloakApiToken;
 
 }

@@ -3,7 +3,7 @@ import knex, {Knex} from "knex";
 
 //import fetch from 'node-fetch';
 
-import { AppConf } from '../model/config/AppConf.js';
+import { type AppConf } from '../model/config/AppConf.js';
 import ResultEmail from '../service/ResultEmail.js';
 
 
