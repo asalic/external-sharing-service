@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { AppConf } from '../model/config/AppConf.js';
+import { type  AppConf } from '../model/config/AppConf.js';
 
 
 export default class AppConfLoader {
