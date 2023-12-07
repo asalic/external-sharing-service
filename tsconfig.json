@@ -2,11 +2,9 @@
     "include": ["./src/**/*.ts", "./src/**/*.json"],
     "exclude": ["./test", "./node_modules", "./dist", "./bin"],
         "$schema": "https://json.schemastore.org/tsconfig",
-        "extends": "@tsconfig/node18-strictest-esm/tsconfig.json",
         "display": "Node 18 + ESM + Strict(est)",
         "compilerOptions": {
           "allowSyntheticDefaultImports": true,
-          "watch": false,
           "sourceMap": true,
            "outDir": "./dist/",
            "rootDir": "src",
@@ -30,7 +28,7 @@
           "noUncheckedIndexedAccess": true,
           "noUnusedLocals": true,
           "noUnusedParameters": false,
-          "importsNotUsedAsValues": "preserve",
+          "verbatimModuleSyntax": true,
           "checkJs": true,
           "resolveJsonModule": true,
           "strictPropertyInitialization": false
