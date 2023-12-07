@@ -16,6 +16,7 @@ export interface EmailSharing {
     maxFileSize: number;
     allowedFileTypes: string;
     storePath: string;
+    tmpStorePath: string;
 }
 
 export interface PgConnection {
