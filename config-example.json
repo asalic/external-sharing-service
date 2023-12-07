@@ -14,7 +14,8 @@
             "smtpPort": 465,
             "allowedFileTypes": "csv|txt",
             "maxFileSize": 0,
-            "storePath": "/tmp/multer"
+            "storePath": "/tmp",
+            "tmpStorePath": "/tmp"
         }
     },
     "db": {
