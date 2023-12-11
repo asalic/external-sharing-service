@@ -49,28 +49,40 @@ export default abstract class ResultAbstract {
       const reqKap: KeycloakApiToken | null = this.parseReqUserRepresentation(req);
       if (reqKap) {
         const headers: HeadersInit = new Headers();
-        headers.set('client_id', this.appConf.oidc.clientId);
-        headers.set('client_secret', this.appConf.oidc.clientSecret);
-        headers.set('grant_type', "client_credentials");
+        //headers.set('client_id', this.appConf.oidc.clientId);
+        //headers.set('client_secret', this.appConf.oidc.clientSecret);
+        //headers.set('grant_type', "client_credentials");
+        headers.set("Content-Type",  "application/x-www-form-urlencoded");
+        //headers.set('request_uri', "http://localhost:5000");
+        console.log("Obtain application token");
+        const body = new URLSearchParams({
+          'client_id': this.appConf.oidc.clientId,
+          'client_secret': this.appConf.oidc.clientSecret,
+          'grant_type': "client_credentials"});
+
         const authR: Response = await fetch(
-              this.appConf.oidc.url + "realms/" + this.appConf.oidc.realm + "/protocol/openid-connect/token",
+              this.appConf.oidc.url + "/realms/" + this.appConf.oidc.realm + "/protocol/openid-connect/token",
               {
-                method: "GET",
-                headers
+                method: "POST",
+                headers,
+                body
               }
             );
         if (authR.status === 200) {
-          const authRJson: {[k: string]: any} = authR.json();
+          const authRJson: {[k: string]: any} = await authR.json();
           if (authRJson["access_token"]) {
+            console.log("Obtain user information for " + reqKap.userId);
+            const headers: HeadersInit = new Headers();
+            headers.set("Authorization",  `Bearer ${authRJson["access_token"]}`);
             const getUserCredentialsR: Response = await fetch(
-              this.appConf.oidc.url + "/admin/realms/" + this.appConf.oidc.realm + "users/" + reqKap.userId,
+              this.appConf.oidc.url + "/admin/realms/" + this.appConf.oidc.realm + "/users/" + reqKap.userId,
               {
                 method: "GET",
                 headers
               }
             );
             if (getUserCredentialsR.status === 200) {
-              const ur: UserRepresentation = this.userRepresentationKeycloak(getUserCredentialsR.json());
+              const ur: UserRepresentation = this.userRepresentationKeycloak(await getUserCredentialsR.json());
               return ur;
             } else {
               throw new AuthenticationError("Unable to retrieve user information", await getUserCredentialsR.text(), getUserCredentialsR.status);
@@ -79,6 +91,7 @@ export default abstract class ResultAbstract {
             throw new AuthenticationError("Token missing", "The system was unable to obtain a user token", 500);
           }        
         } else {
+          console.error(authR);
           throw new AuthenticationError(authR.statusText, await authR.text(), authR.status);
         }
       } else {

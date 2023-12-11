@@ -2,7 +2,7 @@ import type { Request, Response as ResponseExpress, NextFunction, RequestHandler
 import multer from 'multer';
 import path from "node:path";
 import mime from "mime";
-import uuid from "uuid";
+import {v4 as uuidv4} from "uuid";
 import fs from "node:fs";
 
 
@@ -71,7 +71,7 @@ export default class ResultEmail extends ResultAbstract {
           cb(null, thisO.getUploadTmpPath());
         },
         filename: function (req, file, cb) {
-          cb(null, uuid.v4())
+          cb(null, uuidv4())
         }
       })
     }
@@ -108,7 +108,8 @@ export default class ResultEmail extends ResultAbstract {
         const tokenValid: boolean = this.validateApiToken(req,  ur);
         if (tokenValid) {
           const sp: string = this.appConf.sharing.email.storePath;
-            const fp = req.file?.originalname ?? uuid.v4();
+          //console.log(req);
+            const fp = req.file?.originalname ?? uuidv4();
             const ffp = path.join(sp, ur.id, fp);
             const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file?.filename ?? "");
             this.moveUploadedFromTmp(tmpFfp, ffp);
@@ -132,7 +133,7 @@ export default class ResultEmail extends ResultAbstract {
         }
       } catch(e) {
         if (e instanceof AuthenticationError) {
-          payload = { message: `${e.getTitle()}: ${e.getMessage}`, statusCode: e.getStatus() };
+          payload = { message: `${e.getTitle()}: ${e.getMessage()}`, statusCode: 401 };
         } else {
           console.error(e);
           payload = { message: "Something went wrong", statusCode: 500 };
