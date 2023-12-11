@@ -13,8 +13,8 @@ if [ ! -f ${fileToUpload} ]; then
     exit 2
 fi
 
-if [ -z "${EXTERNAL_SHARING_SERVICE_APITOKEN}" ]; then
-    echo "[ERROR] Env variable EXTERNAL_SHARING_SERVICE_APITOKEN not set or empty, cannot proceed without the API token!"
+if [ -z "${EXTERNAL_SHARING_SERVICE_API_TOKEN}" ]; then
+    echo "[ERROR] Env variable EXTERNAL_SHARING_SERVICE_API_TOKEN not set or empty, cannot proceed without the API token!"
     exit 3
 fi
 
@@ -26,4 +26,4 @@ fi
 
 echo "Uploading ${fileToUpload}"
 
-curl -v --header "authorization: apitoken ${EXTERNAL_SHARING_SERVICE_APITOKEN}" -F file=@${fileToUpload} ${EXTERNAL_SHARING_SERVICE_URL}/result/email 
+curl -v --header "authorization: apitoken ${EXTERNAL_SHARING_SERVICE_API_TOKEN}" -F file=@${fileToUpload} ${EXTERNAL_SHARING_SERVICE_URL}/result/email 
