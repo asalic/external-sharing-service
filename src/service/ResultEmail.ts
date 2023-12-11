@@ -4,8 +4,6 @@ import path from "node:path";
 import mime from "mime";
 import {v4 as uuidv4} from "uuid";
 import fs from "node:fs";
-
-
 import nodemailer from "nodemailer";
 
 import { type AppConf } from "../model/config/AppConf.js";
@@ -20,6 +18,7 @@ export default class ResultEmail extends ResultAbstract {
 
     constructor(appConf: AppConf) {
         super(appConf);
+        this.path = "/result/email";
         if (!fs.existsSync(appConf.sharing.email.storePath)){
           fs.mkdirSync(appConf.sharing.email.storePath, {recursive: true});
         }
@@ -35,7 +34,7 @@ export default class ResultEmail extends ResultAbstract {
     protected getMulterConf(): any {
         return {
           storage: this.getMulterStorage(),
-          fileFilter: this.getMulterFileFilter(),
+          //fileFilter: this.getMulterFileFilter(),
           limits: {
             fileSize: this.appConf.sharing.email.maxFileSize
           }
@@ -44,7 +43,7 @@ export default class ResultEmail extends ResultAbstract {
 
     protected getMulterFileFilter(): Function {
       return async (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-          const s: SettingsParams | null = this.getSettingsParams(req.params["byType"]);
+          const s: SettingsParams | null = this.getSettingsParams(this.getPath());
           if (s) {
             // Allowed ext
             const filetypes = new RegExp(`/${s.allowedFileTypes}/`);
@@ -52,7 +51,8 @@ export default class ResultEmail extends ResultAbstract {
             const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
             // Check mime
             const mimetype = filetypes.test(file.mimetype);
-      
+            console.log(path.extname(file.originalname).toLowerCase());
+            console.log(path.extname(file.mimetype));
             if(mimetype && extname) {
               cb(null, true);
             } else {
@@ -68,6 +68,7 @@ export default class ResultEmail extends ResultAbstract {
       const thisO = this;
       return multer.diskStorage({
         destination: function (req, file, cb) {
+          console.log(thisO.getUploadTmpPath());
           cb(null, thisO.getUploadTmpPath());
         },
         filename: function (req, file, cb) {
@@ -85,7 +86,10 @@ export default class ResultEmail extends ResultAbstract {
       const transporter = nodemailer.createTransport({
         host: this.appConf.sharing.email.smtpServer,
         port: this.appConf.sharing.email.smtpPort,
-        secure: true
+        secure: false,
+        tls: {
+            ciphers:'SSLv3'
+        }
       });
       const info = await transporter.sendMail({
         from: `"${this.appConf.sharing.email.fromName}" <${this.appConf.sharing.email.fromAddress}>`, // sender address
@@ -107,26 +111,33 @@ export default class ResultEmail extends ResultAbstract {
         const ur: UserRepresentation = await this.auth(req);
         const tokenValid: boolean = this.validateApiToken(req,  ur);
         if (tokenValid) {
-          const sp: string = this.appConf.sharing.email.storePath;
-          //console.log(req);
-            const fp = req.file?.originalname ?? uuidv4();
-            const ffp = path.join(sp, ur.id, fp);
-            const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file?.filename ?? "");
-            this.moveUploadedFromTmp(tmpFfp, ffp);
-          try {
-              const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
-                {
-                  filename: req.file?.originalname,
-                  path: ffp,
-                  contentType: mime.getType(fp)
-                }
-              ]);
-              console.log(info);
-              payload = { message: `Uploaded data forwarded to ${ur.firstName} ${ur.lastName} (${ur.username}) email ${ur.email}`, statusCode: 200 };
-          } catch (e) {
-            console.error(e);
-            const msg = e instanceof Error ? e.message : JSON.stringify(e); 
-            payload = { message: `Error sending the email: ${msg}`, statusCode: 500 };
+          
+            const sp: string = this.appConf.sharing.email.storePath;
+            console.log(req.file);
+          const validateResp: ResponseMessage = this.validateFile(req.file);
+          if (validateResp.statusCode === 201 && req.file) {
+            console.log(req.headers);
+              const fp = req.file.originalname ?? uuidv4();
+              const ffp = path.join(sp, ur.id, fp);
+              const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file.filename);
+              this.moveUploadedFromTmp(tmpFfp, ffp);
+            try {
+                const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
+                  {
+                    filename: fp,
+                    path: ffp,
+                    contentType: mime.getType(fp)
+                  }
+                ]);
+                console.log(info);
+                payload = { message: `Uploaded data forwarded to ${ur.firstName} ${ur.lastName} (${ur.username}) email ${ur.email}`, statusCode: 200 };
+            } catch (e) {
+              console.error(e);
+              const msg = e instanceof Error ? e.message : JSON.stringify(e); 
+              payload = { message: `Error sending the email: ${msg}`, statusCode: 500 };
+            }
+          } else {
+           payload = validateResp;
           }
         } else {
           payload = { message: "Invalid API token", statusCode: 401 };

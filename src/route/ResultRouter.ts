@@ -22,7 +22,7 @@ export default class ResultRouter {
     // )
     this.router = express.Router();
       this.resultEmail = new ResultEmail(appConf);
-    this.router.post('/result/email', this.resultEmail.getMulterHandler(), //keycloak.protect(),
+    this.router.post(this.resultEmail.getPath(), this.resultEmail.getMulterHandler(), //keycloak.protect(),
       this.resultEmail.handleCall.bind(this.resultEmail)  
     );
   }
