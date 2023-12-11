@@ -12,8 +12,12 @@
             "fromAddress": "",
             "smtpServer": "smtp.your-server",
             "smtpPort": 465,
-            "allowedFileTypes": "csv|txt",
-            "maxFileSize": 0,
+            "file": {
+                "nameRegex": "/^[a-zA-Z0-9_]+$/",
+                "nameMaxLen": 0,
+                "allowedTypes": "csv|txt",
+                "maxSize": 0
+            },
             "storePath": "/tmp",
             "tmpStorePath": "/tmp"
         }

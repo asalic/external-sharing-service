@@ -3,6 +3,13 @@ export interface SharingMethod {
     email: EmailSharing
 }
 
+export interface EmailFileProps {
+    nameRegex: string;
+    nameMaxLen: number;
+    allowedTypes: string;
+    maxSize: number;
+}
+
 export interface EmailSharing {
     enabled: boolean;
     uploadFieldName: string;
@@ -13,8 +20,7 @@ export interface EmailSharing {
     smtpServer: string;
     smtpPort: number;
     trustProxy: boolean;
-    maxFileSize: number;
-    allowedFileTypes: string;
+    file: EmailFileProps;
     storePath: string;
     tmpStorePath: string;
 }

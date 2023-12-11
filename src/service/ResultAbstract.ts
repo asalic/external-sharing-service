@@ -1,13 +1,16 @@
 import type  { Express, Request, RequestHandler, Response as ResponseExpress, NextFunction } from 'express';
 import multer from 'multer';
+import { MulterError } from 'multer';
+
 import AuthenticationError from '../error/AuthenticationError.js';
 //import path from "node:path";
 
 import { type AppConf } from '../model/config/AppConf.js';
 import type KeycloakApiToken from '../model/KeycloakApiToken.js';
 import type ResponseMessage from '../model/ResponseMessage.js';
-import type SettingsParams from '../model/SettingsParams.js';
+//import type SettingsParams from '../model/SettingsParams.js';
 import type UserRepresentation from '../model/UserRepresentation.js';
+import MulterErrorCustom from "../error/MulterErrorCustom.js";
 //import ErrorResponse from "../error/ErrorResponse.js";
 //import ResponseMessage from '../model/ResponseMessage.js';
 
@@ -20,33 +23,72 @@ export default abstract class ResultAbstract {
         this.appConf = appConf;
     }
 
+    public getMulterFileSizeError() {
+      return (err: any, req: Request, res: ResponseExpress, next: NextFunction) => {
+        console.log(err);
+        if (err) {
+          if (err instanceof MulterError){
+            res.status(400);
+            if (err.code === "LIMIT_FILE_SIZE") {
+              res.send({
+                message: `The file you are trying to upload is too big. Maximum accepted fie size is ${this.getFileSizeMax()} bytes.`,
+                statusCode: 400
+              });
+            } else {
+              res.send({
+                message: err.message,//`The file you are trying to upload is too big. Maximum accepted fie size is ${this.getFileSizeMax()} bytes.`,
+                statusCode: 400
+              });
+            }
+          } else if (err instanceof Error){
+            res.status(400);
+            res.send({
+              message: err.message,//`The file you are trying to upload is too big. Maximum accepted fie size is ${this.getFileSizeMax()} bytes.`,
+              statusCode: 400
+            });
+          } else {
+            res.status(500);
+            res.send({
+              message: JSON.stringify(err),
+              statusCode: 500
+            });
+          }
+        } else {
+          next()
+        }
+      }
+    }
+
     public abstract getMulterHandler(): RequestHandler;
     protected abstract getMulterStorage(): multer.StorageEngine;
-    protected abstract getMulterFileFilter(): Function;
+    //protected abstract getMulterFileFilter(): Function;
     protected abstract getMulterConf(): any;    
     public abstract handleCall(req: Request, res: ResponseExpress, next: NextFunction): Promise<void>;
+    protected abstract getFileNameRegex(): string;
+    protected abstract getFileNameMaxLen(): number;
+    protected abstract getFileSizeMax(): number;
     
     public getPath(): string {return this.path;}
 
-    protected getSettingsParams(byType: string | undefined | null): SettingsParams | null  {
-        if (byType) {
-          const t: string = byType.toLowerCase();
-          switch (t) {
-            case "/result/email": 
-              return {
-                maxFileSize: this.appConf.sharing.email.maxFileSize ?? 0,
-                allowedFileTypes: this.appConf.sharing.email.allowedFileTypes ?? ""
-              }
-            default: {
-              console.error(`Unknwon result forwarding method '${t}'`);
-              return null;
-            }
-          }
-        } else {
-          console.error("Result forwarding method has to be defined");
-          return null;
-        }
-      }
+    // protected getSettingsParams(byType: string | undefined | null): SettingsParams | null  {
+    //     if (byType) {
+    //       const t: string = byType.toLowerCase();
+    //       switch (t) {
+    //         case "/result/email": 
+    //           return {
+    //             maxFileSize: this.appConf.sharing.email.maxFileSize ?? 0,
+    //             allowedFileTypes: this.appConf.sharing.email.allowedFileTypes ?? ""
+    //           }
+    //         default: {
+    //           console.error(`Unknwon result forwarding method '${t}'`);
+    //           return null;
+    //         }
+    //       }
+    //     } else {
+    //       console.error("Result forwarding method has to be defined");
+    //       return null;
+    //     }
+    //   }
 
     protected async auth(req: Request): Promise<UserRepresentation> {
       const reqKap: KeycloakApiToken | null = this.parseReqUserRepresentation(req);

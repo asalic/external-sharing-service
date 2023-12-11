@@ -8,10 +8,11 @@ import nodemailer from "nodemailer";
 
 import { type AppConf } from "../model/config/AppConf.js";
 import type ResponseMessage from '../model/ResponseMessage.js';
-import type SettingsParams from '../model/SettingsParams.js';
+// /import type SettingsParams from '../model/SettingsParams.js';
 import ResultAbstract from "./ResultAbstract.js";
 import type UserRepresentation from '../model/UserRepresentation.js';
 import AuthenticationError from '../error/AuthenticationError.js';
+import MulterErrorCustom from '../error/MulterErrorCustom.js';
 
 
 export default class ResultEmail extends ResultAbstract {
@@ -34,33 +35,51 @@ export default class ResultEmail extends ResultAbstract {
     protected getMulterConf(): any {
         return {
           storage: this.getMulterStorage(),
-          //fileFilter: this.getMulterFileFilter(),
+          fileFilter: this.getMulterFileFilter(),
           limits: {
-            fileSize: this.appConf.sharing.email.maxFileSize
+            fileSize: this.appConf.sharing.email.file.maxSize
           }
       }
     }
 
     protected getMulterFileFilter(): Function {
       return async (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-          const s: SettingsParams | null = this.getSettingsParams(this.getPath());
-          if (s) {
-            // Allowed ext
-            const filetypes = new RegExp(`/${s.allowedFileTypes}/`);
-            // Check ext
-            const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-            // Check mime
-            const mimetype = filetypes.test(file.mimetype);
-            console.log(path.extname(file.originalname).toLowerCase());
-            console.log(path.extname(file.mimetype));
-            if(mimetype && extname) {
-              cb(null, true);
-            } else {
-              cb(null, false);
-            }
-          } else {
-            cb(null, false);
-          }
+        const re = new RegExp(this.getFileNameRegex());
+        if (!re.test(file.originalname)) {
+          const e = new Error(
+            `File name contains invalid characters. Please use the following regex expression to validate the name: ${this.getFileNameRegex()}`,
+            //400
+            );
+          cb(e);
+          //return  { message: `File name contains invalid characters. Please use the following regex expression to validate the name: ${this.getFileNameRegex()}`, statusCode: 400 };
+        }
+        if (file.originalname.length > this.getFileNameMaxLen()) {
+          const e = new Error(
+            `File name's length should be less than ${this.getFileNameMaxLen()} characters total, including extension`,
+            //400
+            );
+          cb(e);
+          //return  { message: `File name's length should be less than ${this.getFileNameMaxLen()} characters total, including extension`, statusCode: 400 };
+        }
+        cb(null, true);
+          // const s: SettingsParams | null = this.getSettingsParams(this.getPath());
+          // if (s) {
+          //   // Allowed ext
+          //   const filetypes = new RegExp(`/${s.allowedFileTypes}/`);
+          //   // Check ext
+          //   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+          //   // Check mime
+          //   const mimetype = filetypes.test(file.mimetype);
+          //   console.log(path.extname(file.originalname).toLowerCase());
+          //   console.log(path.extname(file.mimetype));
+          //   if(mimetype && extname) {
+          //     cb(null, true);
+          //   } else {
+          //     cb(null, false);
+          //   }
+          // } else {
+          //   cb(null, false);
+          // }
         }
     }
 
@@ -102,6 +121,11 @@ export default class ResultEmail extends ResultAbstract {
     }
 
 
+    protected getFileNameRegex(): string { return this.appConf.sharing.email.file.nameRegex; }
+    protected getFileNameMaxLen(): number { return this.appConf.sharing.email.file.nameMaxLen; }
+    protected getFileSizeMax(): number { return this.appConf.sharing.email.file.maxSize; }
+
+
     public async handleCall(req: Request, res: ResponseExpress, next: NextFunction): Promise<void> {
       let payload: ResponseMessage = {
         message: "Not implemented", 
@@ -113,14 +137,12 @@ export default class ResultEmail extends ResultAbstract {
         if (tokenValid) {
           
             const sp: string = this.appConf.sharing.email.storePath;
-            console.log(req.file);
           const validateResp: ResponseMessage = this.validateFile(req.file);
           if (validateResp.statusCode === 201 && req.file) {
-            console.log(req.headers);
-              const fp = req.file.originalname ?? uuidv4();
-              const ffp = path.join(sp, ur.id, fp);
-              const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file.filename);
-              this.moveUploadedFromTmp(tmpFfp, ffp);
+            const fp = req.file.originalname ?? uuidv4();
+            const ffp = path.join(sp, ur.id, fp);
+            const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file.filename);
+            this.moveUploadedFromTmp(tmpFfp, ffp);
             try {
                 const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
                   {
@@ -150,7 +172,7 @@ export default class ResultEmail extends ResultAbstract {
           payload = { message: "Something went wrong", statusCode: 500 };
         }
       } finally {
-        res.status(payload.statusCode);
+        res.status(payload.statusCode ?? 500);
         res.send(payload);
       }
   
