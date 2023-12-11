@@ -5,7 +5,7 @@ import express from 'express';
 import type { Express, Request, Response, NextFunction } from 'express';
 import type { ErrorRequestHandler } from "express";
 import morgan from 'morgan';
-import path from "node:path";
+//import path from "node:path";
 //import 'dotenv/config';
 //import fs from "node:fs";
 import { parseArgs } from 'node:util';
@@ -14,13 +14,16 @@ import BaseError from './error/BaseError.js';
 import ResultRouter from './route/ResultRouter.js';
 import AppConfLoader from './service/AppConfLoader.js';
 import { type AppConf } from './model/config/AppConf.js';
-
-const { values } = parseArgs({ args: process.argv, options: {
-        "settings": { type: "string", short: "s", "default": "config-example.json" }
+import { exit } from 'node:process';
+console.log(process.argv);
+const { values } = parseArgs({ args: process.argv.slice(2, process.argv.length), options: {
+        "settings": { type: "string", short: "s", "default": undefined }
         }
     });
+console.log(values.settings);
 if (!values.settings) {
-    console.error("Please define a settings file");
+    console.error("[ERROR] Please load a settings file using either -s or --settings.");
+    exit(1);
 }
 const settingsPath = values.settings ?? "";
 const appConf: AppConf = AppConfLoader.getAppConf(settingsPath);//JSON.parse(fs.readFileSync(settingsPath, { encoding: 'utf8', flag: 'r' }));
@@ -31,7 +34,7 @@ const app: Express = express();
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+//app.use(express.static(path.join(__dirname, 'public')));
 //app.use(CookieParser());
 //app.use(BodyParser.json({ limit: appConfig.resultPostSize }));
 app.use(BodyParser.urlencoded({ extended: true }));
