@@ -1,10 +1,11 @@
-import type  { Request, RequestHandler, Response as ResponseExpress, NextFunction } from 'express';
+import type  { Express, Request, RequestHandler, Response as ResponseExpress, NextFunction } from 'express';
 import multer from 'multer';
 import AuthenticationError from '../error/AuthenticationError.js';
 //import path from "node:path";
 
 import { type AppConf } from '../model/config/AppConf.js';
 import type KeycloakApiToken from '../model/KeycloakApiToken.js';
+import type ResponseMessage from '../model/ResponseMessage.js';
 import type SettingsParams from '../model/SettingsParams.js';
 import type UserRepresentation from '../model/UserRepresentation.js';
 //import ErrorResponse from "../error/ErrorResponse.js";
@@ -13,6 +14,7 @@ import type UserRepresentation from '../model/UserRepresentation.js';
 export default abstract class ResultAbstract {
 
     protected appConf: AppConf;
+    protected path: string;
 
     constructor(appConf: AppConf) {
         this.appConf = appConf;
@@ -21,15 +23,16 @@ export default abstract class ResultAbstract {
     public abstract getMulterHandler(): RequestHandler;
     protected abstract getMulterStorage(): multer.StorageEngine;
     protected abstract getMulterFileFilter(): Function;
-    protected abstract getMulterConf(): any;
+    protected abstract getMulterConf(): any;    
     public abstract handleCall(req: Request, res: ResponseExpress, next: NextFunction): Promise<void>;
-
+    
+    public getPath(): string {return this.path;}
 
     protected getSettingsParams(byType: string | undefined | null): SettingsParams | null  {
         if (byType) {
           const t: string = byType.toLowerCase();
           switch (t) {
-            case "email": 
+            case "/result/email": 
               return {
                 maxFileSize: this.appConf.sharing.email.maxFileSize ?? 0,
                 allowedFileTypes: this.appConf.sharing.email.allowedFileTypes ?? ""
@@ -139,6 +142,15 @@ export default abstract class ResultAbstract {
     } else {
       return null;
     }
+  }
+
+  protected validateFile(file: Express.Multer.File | null | undefined): ResponseMessage {
+    if (!file) {
+      return  { message: `Unable to get the file, please be sure you send it with content type 'application/form-data' and the field name for the file called '${this.appConf.sharing.email.uploadFieldName}'`, statusCode: 400 };
+    }
+
+
+    return { message: "", statusCode: 201 };
   }
 
   protected abstract getUploadTmpPath(): string;
