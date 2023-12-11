@@ -1,5 +1,5 @@
 import express from 'express';
-import knex, {Knex} from "knex";
+import knex from "knex";
 
 //import fetch from 'node-fetch';
 
@@ -12,14 +12,14 @@ export default class ResultRouter {
 
   protected router: express.Router;
   protected appConf: AppConf;
-  protected knexDb: Knex;
+  protected knexDb: knex.Knex;
   protected resultEmail: ResultEmail;
 
   constructor(appConf: AppConf) {
     this.appConf = appConf;
-    this.knexDb = knex(
-      {...appConf.db}
-    )
+    // this.knexDb = knex(
+    //   {...appConf.db}
+    // )
     this.router = express.Router();
       this.resultEmail = new ResultEmail(appConf);
     this.router.post('/result/email', this.resultEmail.getMulterHandler(), //keycloak.protect(),
