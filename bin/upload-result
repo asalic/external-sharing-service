@@ -26,4 +26,4 @@ fi
 
 echo "Uploading ${fileToUpload}"
 
-curl -v --header "authorization: apitoken ${EXTERNAL_SHARING_SERVICE_API_TOKEN}" -F file=@${fileToUpload} ${EXTERNAL_SHARING_SERVICE_URL}/result/email 
+curl --header "authorization: apitoken ${EXTERNAL_SHARING_SERVICE_API_TOKEN}" -F "file=@${fileToUpload}" ${EXTERNAL_SHARING_SERVICE_URL}/result/email
