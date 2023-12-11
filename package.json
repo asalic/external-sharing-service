@@ -49,9 +49,9 @@
     "babel-plugin-transform-import-meta"
   ],
   "scripts": {
-    "start": "ts-node-esm src/index.ts",
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 npx tsx src/index.ts",
     "prod": "node dist/index.js",
-    "dev": "nodemon --exec 'npm start'",
+    "dev": "export NODE_TLS_REJECT_UNAUTHORIZED=0 && nodemon --exec node --no-warnings=ExperimentalWarning --loader ts-node/esm --import=./logError.js ./src/*.ts -- ",
     "test": "NODE_OPTIONS=--experimental-vm-modules npx jest"
   },
   "repository": {
@@ -80,7 +80,8 @@
     "nodemon": "^3.0.2",
     "ts-jest": "^29.1.1",
     "tslib": "^2.6.2",
-    "typescript": "^5.3.2"
+    "typescript": "^5.3.2",
+    "ts-node":"^10.9.2"
   },
   "type": "module"
 }
