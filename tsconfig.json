@@ -3,6 +3,9 @@
     "exclude": ["./test", "./node_modules", "./dist", "./bin"],
         "$schema": "https://json.schemastore.org/tsconfig",
         "display": "Node 18 + ESM + Strict(est)",
+        "ts-node": {
+          "esm": true, // «———— enabling ESM for ts-node   
+        }, 
         "compilerOptions": {
           "allowSyntheticDefaultImports": true,
           "sourceMap": true,
