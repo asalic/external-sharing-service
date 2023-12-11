@@ -1,5 +1,5 @@
 import HttpErrors from 'http-errors';
-import BodyParser from 'body-parser';
+//import BodyParser from 'body-parser';
 //import CookieParser from 'cookie-parser';
 import express from 'express';
 import type { Express, Request, Response, NextFunction } from 'express';
@@ -37,7 +37,7 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(express.static(path.join(__dirname, 'public')));
 //app.use(CookieParser());
 //app.use(BodyParser.json({ limit: appConfig.resultPostSize }));
-app.use(BodyParser.urlencoded({ extended: true }));
+//app.use(BodyParser.urlencoded({ extended: true }));
 //app.use(upload.array());
 
 const resultRouter = new ResultRouter(appConf);
