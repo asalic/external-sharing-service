@@ -10,7 +10,6 @@ import type KeycloakApiToken from '../model/KeycloakApiToken.js';
 import type ResponseMessage from '../model/ResponseMessage.js';
 //import type SettingsParams from '../model/SettingsParams.js';
 import type UserRepresentation from '../model/UserRepresentation.js';
-import MulterErrorCustom from "../error/MulterErrorCustom.js";
 //import ErrorResponse from "../error/ErrorResponse.js";
 //import ResponseMessage from '../model/ResponseMessage.js';
 

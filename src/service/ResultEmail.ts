@@ -12,8 +12,6 @@ import type ResponseMessage from '../model/ResponseMessage.js';
 import ResultAbstract from "./ResultAbstract.js";
 import type UserRepresentation from '../model/UserRepresentation.js';
 import AuthenticationError from '../error/AuthenticationError.js';
-import MulterErrorCustom from '../error/MulterErrorCustom.js';
-
 
 export default class ResultEmail extends ResultAbstract {
 
