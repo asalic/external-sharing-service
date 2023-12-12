@@ -1,15 +1,17 @@
 FROM node:21.2.0-alpine3.18
 
-LABEL name=grandchallenge-result-manager
+LABEL name=external-sharing-service
 MAINTAINER "Andy S Alic (asalic)"
 
-COPY jest.config.ts package.json tsconfig.json /opt/grandchallenge-result-manager/
-COPY src/ /opt/grandchallenge-result-manager/src/
+COPY logError.js README.md jest.config.ts package.json tsconfig.json /opt/external-sharing-service/
+COPY src/ /opt/external-sharing-service/src/
+COPY bin/ /opt/external-sharing-service/bin/
 
-RUN apk add --no-cache sendmail \
-    && cd /opt/grandchallenge-result-manager/ \
+RUN cd /opt/external-sharing-service/ \
     && npm install \
     && npx tsc 
 
-ENTRYPOINT cd /opt/grandchallenge-result-manager/ \
-    && npm run prod
+ENV CONFIG_PATH=/opt/config.json
+
+ENTRYPOINT cd /opt/external-sharing-service/ \
+    && npm run prod -- -s ${CONFIG_PATH}
