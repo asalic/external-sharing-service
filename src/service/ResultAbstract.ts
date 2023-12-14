@@ -10,6 +10,7 @@ import type KeycloakApiToken from '../model/KeycloakApiToken.js';
 import type ResponseMessage from '../model/ResponseMessage.js';
 //import type SettingsParams from '../model/SettingsParams.js';
 import type UserRepresentation from '../model/UserRepresentation.js';
+import DBHandlerAbstract from '../dao/DBHandlerAbstract.js';
 //import ErrorResponse from "../error/ErrorResponse.js";
 //import ResponseMessage from '../model/ResponseMessage.js';
 
@@ -17,6 +18,7 @@ export default abstract class ResultAbstract {
 
     protected appConf: AppConf;
     protected path: string;
+    protected dbHandler: DBHandlerAbstract;
 
     constructor(appConf: AppConf) {
         this.appConf = appConf;
@@ -58,6 +60,7 @@ export default abstract class ResultAbstract {
       }
     }
 
+    public abstract init(): Promise<void>;
     public abstract getMulterHandler(): RequestHandler;
     protected abstract getMulterStorage(): multer.StorageEngine;
     //protected abstract getMulterFileFilter(): Function;
@@ -162,12 +165,12 @@ export default abstract class ResultAbstract {
       return result as UserRepresentation;
     }
 
-  protected validateApiToken(req:  Request,  ur: UserRepresentation): boolean {
+  protected validateApiToken(req:  Request,  ur: UserRepresentation): KeycloakApiToken | null {
     const kapReq: KeycloakApiToken | null = this.parseReqUserRepresentation(req);
     if (kapReq && kapReq.secret === ur.apiToken.secret) {
-      return true;
+      return kapReq;
     } else {
-      return false;
+      return null;
     }
   }
 

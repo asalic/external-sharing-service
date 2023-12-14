@@ -12,19 +12,28 @@ import type ResponseMessage from '../model/ResponseMessage.js';
 import ResultAbstract from "./ResultAbstract.js";
 import type UserRepresentation from '../model/UserRepresentation.js';
 import AuthenticationError from '../error/AuthenticationError.js';
+import type KeycloakApiToken from '../model/KeycloakApiToken.js';
+import DBHandlerEmail from '../dao/DBHandlerEmail.js';
+import UserTransactionEmail from '../model/dao/UserTransactionEmail.js';
+import EUserTransactionStatus from '../model/dao/EUserTransactionStatus.js';
 
 export default class ResultEmail extends ResultAbstract {
 
     constructor(appConf: AppConf) {
         super(appConf);
+        this.dbHandler = new DBHandlerEmail(appConf.db);
         this.path = "/result/email";
-        if (!fs.existsSync(appConf.sharing.email.storePath)){
-          fs.mkdirSync(appConf.sharing.email.storePath, {recursive: true});
-        }
-        if (!fs.existsSync(appConf.sharing.email.tmpStorePath)){
-          fs.mkdirSync(appConf.sharing.email.tmpStorePath, {recursive: true});
-        }
     }    
+
+    public async init(): Promise<void> {
+      await this.dbHandler.init();
+      if (!fs.existsSync(this.appConf.sharing.email.storePath)){
+        fs.mkdirSync(this.appConf.sharing.email.storePath, {recursive: true});
+      }
+      if (!fs.existsSync(this.appConf.sharing.email.tmpStorePath)){
+        fs.mkdirSync(this.appConf.sharing.email.tmpStorePath, {recursive: true});
+      }
+    }
 
     protected getUploadTmpPath(): string  {
       return this.appConf.sharing.email.tmpStorePath;
@@ -131,16 +140,32 @@ export default class ResultEmail extends ResultAbstract {
       };
       try {
         const ur: UserRepresentation = await this.auth(req);
-        const tokenValid: boolean = this.validateApiToken(req,  ur);
-        if (tokenValid) {
-          
-            const sp: string = this.appConf.sharing.email.storePath;
+        const kapReq: KeycloakApiToken  | null = this.validateApiToken(req,  ur);
+        if (kapReq) {          
+          const sp: string = this.appConf.sharing.email.storePath;
           const validateResp: ResponseMessage = this.validateFile(req.file);
           if (validateResp.statusCode === 201 && req.file) {
             const fp = req.file.originalname ?? uuidv4();
             const ffp = path.join(sp, ur.id, fp);
             const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file.filename);
-            this.moveUploadedFromTmp(tmpFfp, ffp);
+            fs.renameSync(tmpFfp, ffp);
+            const t: UserTransactionEmail = {
+              userId: kapReq.userId,
+              toEmail: ur.email,
+              fromEmail: this.appConf.sharing.email.fromAddress,
+              subject: null,
+              body: null,
+              transactionData: {
+                originalName: fp,
+                filename: req.file.filename
+
+              },
+              status: this.dbHandler.getUserTransactionStatus(EUserTransactionStatus.STORE_SUC) 
+            }
+            const tId: number = await this.dbHandler.addUserTransaction(t);
+            console.log(`Transaction with ID ${tId} created`);
+            //console.debug(dbR);
+            //this.moveUploadedFromTmp(tmpFfp, ffp);
             try {
                 const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
                   {

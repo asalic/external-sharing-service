@@ -41,7 +41,7 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(upload.array());
 
 const resultRouter = new ResultRouter(appConf);
-app.use(appConf.path, resultRouter.getRouter());
+app.use(appConf.path, await resultRouter.getRouter());
 // 404 handler and pass to error handler
 app.use((req: Request, res: Response, next: NextFunction) => {
     next(HttpErrors(404, new BaseError("Not found", "Path " + req.path + " not found on the server", 404)));
