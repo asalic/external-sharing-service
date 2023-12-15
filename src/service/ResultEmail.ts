@@ -138,16 +138,18 @@ export default class ResultEmail extends ResultAbstract {
         message: "Not implemented", 
         statusCode: 501
       };
+      const tmpFfp: string | null = req.file && req.file.filename 
+        ? path.join(this.getUploadTmpPath(), req.file.filename)
+        : null;
       try {
         const ur: UserRepresentation = await this.auth(req);
         const kapReq: KeycloakApiToken  | null = this.validateApiToken(req,  ur);
         if (kapReq) {          
           const sp: string = this.appConf.sharing.email.storePath;
           const validateResp: ResponseMessage = this.validateFile(req.file);
-          if (validateResp.statusCode === 201 && req.file) {
+          if (validateResp.statusCode === 201 && req.file && tmpFfp) {
             const fp = req.file.originalname ?? uuidv4();
             const ffp = path.join(sp, ur.id, fp);
-            const tmpFfp: string = path.join(this.getUploadTmpPath(), req.file.filename);
             fs.renameSync(tmpFfp, ffp);
             const t: UserTransactionEmail = {
               userId: kapReq.userId,
@@ -195,16 +197,14 @@ export default class ResultEmail extends ResultAbstract {
           payload = { message: "Something went wrong", statusCode: 500 };
         }
       } finally {
+        //clean tmp files if still there
+        if (tmpFfp && fs.existsSync(tmpFfp)) {
+          fs.rmSync(tmpFfp);
+        }
         res.status(payload.statusCode ?? 500);
         res.send(payload);
       }
   
     }
-
-    protected moveUploadedFromTmp(source: string, destination: string): void {
-      fs.cpSync(source,  destination);
-      fs.rmSync(source);
-    }
-
 
 }
