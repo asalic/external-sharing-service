@@ -20,7 +20,6 @@ const { values } = parseArgs({ args: process.argv.slice(2, process.argv.length),
         "settings": { type: "string", short: "s", "default": undefined }
         }
     });
-console.log(values.settings);
 if (!values.settings) {
     console.error("[ERROR] Please load a settings file using either -s or --settings.");
     exit(1);
@@ -28,7 +27,7 @@ if (!values.settings) {
 const settingsPath = values.settings ?? "";
 const appConf: AppConf = AppConfLoader.getAppConf(settingsPath);//JSON.parse(fs.readFileSync(settingsPath, { encoding: 'utf8', flag: 'r' }));
 // /const appConfig = AppConfig.get();
-
+console.log(`jobman version '${process.env["npm_package_version"]}'`);
 const app: Express = express();
 
 app.use(morgan('dev'));
