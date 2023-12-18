@@ -44,6 +44,31 @@ export default abstract class DBHandlerAbstract {
         }
     }
 
+    public getUserTransactionCountToday(userId: string): Promise<number > {
+        const dtStartDay: Date = new Date();
+        dtStartDay.setUTCHours(0);
+        dtStartDay.setUTCMilliseconds(0);
+        dtStartDay.setUTCMinutes(0);
+        dtStartDay.setUTCSeconds(0);
+        console.log(`Today base line is: ${dtStartDay.toISOString()}`);
+        console.log(`Today now date is: ${new Date().toISOString()}`);
+        return this.knexDb.select()
+            .where("user_id", userId)
+            .whereBetween("execution_date", [dtStartDay, new Date()])
+            .from("user_transaction")
+            .count<number>('id AS cnt')
+            .first()
+            .then((d: any) => new Promise((res, rej) => {
+                const cnt: number  = d?.["cnt"] ?? -1;
+                res(cnt);
+                // if (d) {
+                //     res(await d);
+                // } else {
+                //     rej(d);
+                // }
+            }));
+    }
+
     protected addUserIfMissing(keycloak_id: string): knex.Knex.QueryBuilder {
         return this.knexDb("user_info").insert({
             keycloak_id

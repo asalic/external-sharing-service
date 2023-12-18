@@ -19,7 +19,8 @@
                 "maxSize": 0
             },
             "storePath": "/tmp",
-            "tmpStorePath": "/tmp"
+            "tmpStorePath": "/tmp",
+            "maxNumUploadsDaily": 10
         }
     },
     "db": {
