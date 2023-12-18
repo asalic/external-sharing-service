@@ -24,6 +24,7 @@ export interface EmailSharing {
     file: EmailFileProps;
     storePath: string;
     tmpStorePath: string;
+    maxNumUploadsDaily: number;
 }
 
 export interface OidcSettings {

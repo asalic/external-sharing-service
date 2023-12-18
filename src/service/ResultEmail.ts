@@ -107,7 +107,7 @@ export default class ResultEmail extends ResultAbstract {
       return multer(this.getMulterConf()).single(this.appConf.sharing.email.uploadFieldName);
     }
 
-    protected async sendMail(to: string, 
+    protected sendMail(to: string, 
         attachments: any[]): Promise<nodemailer.SentMessageInfo> {
       const transporter = nodemailer.createTransport({
         host: this.appConf.sharing.email.smtpServer,
@@ -117,14 +117,13 @@ export default class ResultEmail extends ResultAbstract {
             ciphers:'SSLv3'
         }
       });
-      const info = await transporter.sendMail({
+      return  transporter.sendMail({
         from: `"${this.appConf.sharing.email.fromName}" <${this.appConf.sharing.email.fromAddress}>`, // sender address
         to, // list of receivers
         subject: this.appConf.sharing.email.subject, // Subject line
         text: this.appConf.sharing.email.text,
         attachments
       });
-      return info;
     }
 
 
@@ -138,53 +137,69 @@ export default class ResultEmail extends ResultAbstract {
         message: "Not implemented", 
         statusCode: 501
       };
+      console
       const tmpFfp: string | null = req.file && req.file.filename 
         ? path.join(this.getUploadTmpPath(), req.file.filename)
         : null;
       try {
         const ur: UserRepresentation = await this.auth(req);
         const kapReq: KeycloakApiToken  | null = this.validateApiToken(req,  ur);
-        if (kapReq) {          
-          const sp: string = this.appConf.sharing.email.storePath;
-          const validateResp: ResponseMessage = this.validateFile(req.file);
-          if (validateResp.statusCode === 201 && req.file && tmpFfp) {
-            const fp = req.file.originalname ?? uuidv4();
-            const ffp = path.join(sp, ur.id, fp);
-            fs.renameSync(tmpFfp, ffp);
-            const t: UserTransactionEmail = {
-              userId: kapReq.userId,
-              toEmail: ur.email,
-              fromEmail: this.appConf.sharing.email.fromAddress,
-              subject: null,
-              body: null,
-              transactionData: {
-                originalName: fp,
-                filename: req.file.filename
-
-              },
-              status: this.dbHandler.getUserTransactionStatus(EUserTransactionStatus.STORE_SUC) 
-            }
-            const tId: number = await this.dbHandler.addUserTransaction(t);
-            console.log(`Transaction with ID ${tId} created`);
-            //console.debug(dbR);
-            //this.moveUploadedFromTmp(tmpFfp, ffp);
-            try {
-                const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
-                  {
-                    filename: fp,
-                    path: ffp,
-                    contentType: mime.getType(fp)
+        if (kapReq) {
+          const submitCount: number = await this.dbHandler.getUserTransactionCountToday(kapReq.userId);
+          if (submitCount < this.appConf.sharing.email.maxNumUploadsDaily) {
+            const sp: string = this.appConf.sharing.email.storePath;
+            const validateResp: ResponseMessage = this.validateFile(req.file);
+            if (validateResp.statusCode === 201 && req.file && tmpFfp) {
+              const fp = req.file.filename;
+              try {
+                  const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
+                    {
+                      filename: fp,
+                      path: tmpFfp,
+                      contentType: mime.getType(fp)
+                    }
+                  ]);
+                  console.error(info);
+                  if (info && info?.["accepted"] && info?.["accepted"].length > 0 
+                      && info?.["accepted"][0].toLowerCase() === ur.email.toLowerCase()) {
+                      const ffp = path.join(sp, ur.id, fp);
+                      if (!fs.existsSync(path.dirname(ffp))){
+                        fs.mkdirSync(path.dirname(ffp), {recursive: true});
+                      }
+                      fs.renameSync(tmpFfp, ffp);
+                      const t: UserTransactionEmail = {
+                          userId: kapReq.userId,
+                          toEmail: ur.email,
+                          fromEmail: this.appConf.sharing.email.fromAddress,
+                          subject: null,
+                          body: null,
+                          transactionData: {
+                            originalName: fp,
+                            filename: req.file.filename
+          
+                          },
+                          status: this.dbHandler.getUserTransactionStatus(EUserTransactionStatus.STORE_SUC) 
+                        }
+                      const tId: number = await this.dbHandler.addUserTransaction(t);
+                      console.log(`Transaction with ID ${tId} created`);
+                      payload = { message: `Uploaded data forwarded to ${ur.firstName} ${ur.lastName} (${ur.username}) email ${ur.email}`, statusCode: 200 };
+                  } else if (info && info?.["response"]) {
+                    payload = { message: `Unable to send the email: ${info.response}`, statusCode: 401 }
+                  } else {
+                    console.error(info);
+                    payload = { message: `Unable to send the email, error unknown`, statusCode: 401 }
                   }
-                ]);
-                console.log(info);
-                payload = { message: `Uploaded data forwarded to ${ur.firstName} ${ur.lastName} (${ur.username}) email ${ur.email}`, statusCode: 200 };
-            } catch (e) {
-              console.error(e);
-              const msg = e instanceof Error ? e.message : JSON.stringify(e); 
-              payload = { message: `Error sending the email: ${msg}`, statusCode: 500 };
+                } catch (e) {
+                console.error(e);
+                const msg = e instanceof Error ? e.message : JSON.stringify(e); 
+                payload = { message: `Error sending the email: ${msg}`, statusCode: 500 };
+              }
+            } else {
+              payload = validateResp;
             }
           } else {
-           payload = validateResp;
+            payload = { message: `You have reached the limit of the max number of emails you are allowed to send daily (${this.appConf.sharing.email.maxNumUploadsDaily}). Please wait until the limit is reset the next day at 00:00:00 UTC time`,
+              statusCode: 406 }
           }
         } else {
           payload = { message: "Invalid API token", statusCode: 401 };
@@ -199,6 +214,7 @@ export default class ResultEmail extends ResultAbstract {
       } finally {
         //clean tmp files if still there
         if (tmpFfp && fs.existsSync(tmpFfp)) {
+          console.log(`Removing file ${tmpFfp}`);
           fs.rmSync(tmpFfp);
         }
         res.status(payload.statusCode ?? 500);

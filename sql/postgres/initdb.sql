@@ -27,11 +27,11 @@ CREATE TABLE IF NOT EXISTS user_transaction (
     transaction_data_id INT8 NOT NULL,
     user_transaction_status_id INT NOT NULL,
     FOREIGN KEY (user_transaction_status_id)
-      REFERENCES user_transaction_status (id),
+      REFERENCES user_transaction_status (id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (user_id)
-      REFERENCES user_info (keycloak_id),
+      REFERENCES user_info (keycloak_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (transaction_data_id)
-      REFERENCES transaction_data (id)
+      REFERENCES transaction_data (id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS user_transaction_email (
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS user_transaction_email (
     subject VARCHAR(500),
     body VARCHAR(5000),
     FOREIGN KEY (user_transaction_id)
-      REFERENCES user_transaction (id)
+      REFERENCES user_transaction (id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 INSERT INTO user_transaction_status VALUES
