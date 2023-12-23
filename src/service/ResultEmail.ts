@@ -171,8 +171,8 @@ export default class ResultEmail extends ResultAbstract {
                           userId: kapReq.userId,
                           toEmail: ur.email,
                           fromEmail: this.appConf.sharing.email.fromAddress,
-                          subject: null,
-                          body: null,
+                          subject: this.appConf.sharing.email.subject,
+                          body: this.appConf.sharing.email.text,
                           transactionData: {
                             originalName: fp,
                             filename: req.file.filename
