@@ -151,15 +151,16 @@ export default class ResultEmail extends ResultAbstract {
             const validateResp: ResponseMessage = this.validateFile(req.file);
             if (validateResp.statusCode === 201 && req.file && tmpFfp) {
               const fp = req.file.filename;
+              const originalName = req.file.originalname;
               try {
                   const info: nodemailer.SentMessageInfo = await this.sendMail(ur.email, [
                     {
-                      filename: fp,
+                      filename: originalName,
                       path: tmpFfp,
                       contentType: mime.getType(fp)
                     }
                   ]);
-                  console.error(info);
+                  //console.error(info);
                   if (info && info?.["accepted"] && info?.["accepted"].length > 0 
                       && info?.["accepted"][0].toLowerCase() === ur.email.toLowerCase()) {
                       const ffp = path.join(sp, ur.id, fp);
@@ -174,7 +175,7 @@ export default class ResultEmail extends ResultAbstract {
                           subject: this.appConf.sharing.email.subject,
                           body: this.appConf.sharing.email.text,
                           transactionData: {
-                            originalName: fp,
+                            originalName: originalName,
                             filename: req.file.filename
           
                           },

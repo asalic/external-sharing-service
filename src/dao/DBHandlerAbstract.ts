@@ -50,8 +50,8 @@ export default abstract class DBHandlerAbstract {
         dtStartDay.setUTCMilliseconds(0);
         dtStartDay.setUTCMinutes(0);
         dtStartDay.setUTCSeconds(0);
-        console.log(`Today base line is: ${dtStartDay.toISOString()}`);
-        console.log(`Today now date is: ${new Date().toISOString()}`);
+        //console.debug(`Today base line is: ${dtStartDay.toISOString()}`);
+        //console.debug(`Today now date is: ${new Date().toISOString()}`);
         return this.knexDb.select()
             .where("user_id", userId)
             .whereBetween("execution_date", [dtStartDay, new Date()])

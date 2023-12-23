@@ -15,7 +15,7 @@ import ResultRouter from './route/ResultRouter.js';
 import AppConfLoader from './service/AppConfLoader.js';
 import { type AppConf } from './model/config/AppConf.js';
 import { exit } from 'node:process';
-console.log(process.argv);
+//console.log(process.argv);
 const { values } = parseArgs({ args: process.argv.slice(2, process.argv.length), options: {
         "settings": { type: "string", short: "s", "default": undefined }
         }
@@ -27,7 +27,7 @@ if (!values.settings) {
 const settingsPath = values.settings ?? "";
 const appConf: AppConf = AppConfLoader.getAppConf(settingsPath);//JSON.parse(fs.readFileSync(settingsPath, { encoding: 'utf8', flag: 'r' }));
 // /const appConfig = AppConfig.get();
-console.log(`jobman version '${process.env["npm_package_version"]}'`);
+console.log(`External Sharing Service version '${process.env["npm_package_version"]}'`);
 const app: Express = express();
 
 app.use(morgan('dev'));
