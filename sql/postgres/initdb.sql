@@ -50,3 +50,5 @@ INSERT INTO user_transaction_status VALUES
     (2, 'STORE_ERR', 'Transaction storing error'),
     (3, 'SENT_SUC', 'Transaction sent to destination'),
     (4, 'SENT_ERR', 'Transaction sending error');
+
+-- DROP TABLE user_transaction_email, user_transaction_status, user_transaction, transaction_data, user_info;
